@@ -44,7 +44,7 @@ class AuthController extends Controller
         $password = bcrypt($request->password);
         $user = User::where('email', '=', $email)->first();
 
-        if (!Auth::attempt($loginData) &&  $request->fcm_token == null) {
+        if (!Auth::attempt($loginData) && $request->fcm_token == null) {
             return response([
                 'status' => 401,
                 'message' => 'Wrong Email or Username',
@@ -241,8 +241,8 @@ class AuthController extends Controller
 
                 $message = ' Profile Vet';
                 break;
-            
-                case 'Pet Shop':
+
+            case 'Pet Shop':
                 $data = $user->petShop;
 
                 // set id to petShop
@@ -265,6 +265,21 @@ class AuthController extends Controller
             'email' => $user->email,
             'message' => $message,
             'role' => $user->role,
+        ], 200);
+    }
+
+    public function getUserById($id)
+    {
+        $user = User::find($id);
+
+        if (!$user) {
+            return response()->json([
+                'data' => $user,
+                'message' => "User not found",
+            ], 400);
+        }
+        return response()->json([
+            'data' => $user,
         ], 200);
     }
 
