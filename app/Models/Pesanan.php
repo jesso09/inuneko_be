@@ -10,18 +10,19 @@ class Pesanan extends Model
     use HasFactory;
     protected $fillable = [
         'customer_id',
-        'produk_id',
+        // 'shop_id',
         'no_pesanan',
-        'jumlah_pesan',
         'tanggal_pesan',
-        'status',
+        'alamat_pengiriman',
     ];
+
     public function cust()
     {
         return $this->belongsTo(Customer::class, 'customer_id');
     }
-    public function produk()
+
+    public function detailOrder()
     {
-        return $this->belongsTo(Produk::class, 'produk_id');
+        return $this->hasMany(DetailPesanan::class, 'order_id');
     }
 }

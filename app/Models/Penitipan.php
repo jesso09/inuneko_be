@@ -12,6 +12,7 @@ class Penitipan extends Model
         'customer_id',
         'pet_id',
         'pet_shop_id',
+        'penitipan_order_id',
         'durasi',
         'harga',
         'mulai',
@@ -20,15 +21,15 @@ class Penitipan extends Model
     ];
     public function pet()
     {
-        return $this->belongsTo(Pet::class, 'id');
+        return $this->belongsTo(Pet::class);
     }
     public function petShop()
     {
-        return $this->belongsTo(PetShop::class, 'id');
+        return $this->belongsTo(PetShop::class);
     }
     public function cust()
     {
-        return $this->belongsTo(Customer::class, 'id');
+        return $this->belongsTo(Customer::class, 'customer_id');
     }
     public function aktivitas()
     {

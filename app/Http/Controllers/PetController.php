@@ -2,8 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Events\ChatEvent;
 use App\Http\Controllers\Controller;
 use App\Models\Pet;
+use Illuminate\Broadcasting\Channel;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
@@ -44,7 +46,6 @@ class PetController extends Controller
         }
 
         $id_customer = Auth::user()->customer->id;
-        $petPict = null;
 
         $newData = $request->all();
         //Validasi Formulir
@@ -65,13 +66,19 @@ class PetController extends Controller
 
         // Simpan gambar dalam direktori 'storage/app/public/images'
         if ($request->pet_pict != null) {
-            $path = $request->file('pet_pict')->store('public/images');
-            $petPict = basename($path);
+
+            $original_name = $request->pet_pict->getClientOriginalName();
+            $generated_name = 'pet' . '-' . time() . '.' . $request->pet_pict->extension();
+
+            // menyimpan gambar
+            $request->pet_pict->storeAs('public/pet', $generated_name);
+        }else {
+            $generated_name = null;
         }
 
         $newPetData = Pet::create([
             'customer_id' => $id_customer,
-            'pet_pict' => $petPict,
+            'pet_pict' => $generated_name,
             'nama' => $request->nama,
             'gender' => $request->gender,
             'jenis' => $request->jenis,
@@ -120,7 +127,7 @@ class PetController extends Controller
 
         // Hapus file gambar jika ada
         if ($petFound->pet_pict) {
-            Storage::delete('public/images/' . $petFound->pet_pict);
+            unlink(public_path('storage/pet/' . $petFound->pet_pict));
         }
 
         // Hapus konten dari database
@@ -190,19 +197,25 @@ class PetController extends Controller
                 ], 200);
             }
         } else if ($request->pet_pict != null) {
-            Storage::delete('public/images/' . $targetPet->pet_pict);
-            $targetPet->pet_pict = null;
-        }
+            if ($targetPet->pet_pict == null) {
+                $original_name = $request->pet_pict->getClientOriginalName();
+                $generated_name = 'pet' . '-' . time() . '.' . $request->pet_pict->extension();
 
-        if ($request->pet_pict != null && $targetPet->pet_pict == null) {
-            $path = $request->file('pet_pict')->store('public/images');
-            $petPict = basename($path);
-            $targetPet->pet_pict = $petPict;
-        } else if ($request->pet_pict != null && $targetPet->pet_pict != null) {
-            Storage::delete('public/images/' . $targetPet->pet_pict);
-            $path = $request->file('pet_pict')->store('public/images');
-            $petPict = basename($path);
-            $targetPet->pet_pict = $petPict;
+                // menyimpan gambar
+                $request->pet_pict->storeAs('public/pet', $generated_name);
+                $targetPet->pet_pict = $generated_name;
+
+
+            } else if ($targetPet->pet_pict != null) {
+
+                unlink(public_path('storage/pet/' . $targetPet->pet_pict));
+
+                $original_name = $request->pet_pict->getClientOriginalName();
+                $generated_name = 'pet' . '-' . time() . '.' . $request->pet_pict->extension();
+                // menyimpan gambar
+                $request->pet_pict->storeAs('public/pet', $generated_name);
+                $targetPet->pet_pict = $generated_name;
+            }
         }
 
         if ($targetPet->save()) {

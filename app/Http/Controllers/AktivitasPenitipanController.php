@@ -47,31 +47,48 @@ class AktivitasPenitipanController extends Controller
             return response(['message' => $validator->errors()], 400);
         }
 
-        $activityPict = null;
-        $activityVid = null;
-        // Simpan gambar dalam direktori 'storage/app/public/images'
+        if ($request->foto == null && $request->video == null) {
+            return response([
+                'message' => 'Required 1 foto or 1 video is required',
+                'data' => null
+            ], 400);
+        }
+
         if ($request->foto != null && $request->video != null) {
             return response([
                 'message' => 'Only 1 foto or 1 video is required',
                 'data' => null
             ], 400);
-        } else if ($request->foto != null) {
-            $path = $request->file('foto')->store('public/images');
-            $activityPict = basename($path);
-        } else if ($request->video != null) {
-            $vidPath = $request->file('video')->store('public/videos');
-            $activityVid = basename($vidPath);
         }
 
-        // Buat data baru dalam tabel anggota_keluarga
+        $generatedNamePict = null;
+        $generatedNameVid = null;
+
+        if ($request->foto != null) {
+            $originalName = $request->foto->getClientOriginalName();
+            $generatedNamePict = 'aktivitas' . '-' . time() . '.' . $request->foto->extension();
+
+            // menyimpan gambar
+            $request->foto->storeAs('public/aktivitas', $generatedNamePict);
+        }
+
+        if ($request->video != null) {
+            $originalName = $request->video->getClientOriginalName();
+            $generatedNameVid = 'aktivitas' . '-' . time() . '.' . $request->video->extension();
+
+            // menyimpan video
+            $request->video->storeAs('public/aktivitas', $generatedNameVid);
+        }
+
         $newActivity = AktivitasPenitipan::create([
             'penitipan_id' => $request->penitipan_id,
-            'foto' => $activityPict,
-            'video' => $activityVid,
+            'foto' => $generatedNamePict,
+            'video' => $generatedNameVid,
             'judul_aktivitas' => $request->judul_aktivitas,
             'waktu_aktivitas' => $request->waktu_aktivitas,
             'keterangan' => $request->keterangan,
         ]);
+
         return response([
             'message' => 'Data added successfully',
             'data' => $newActivity
@@ -192,40 +209,50 @@ class AktivitasPenitipanController extends Controller
                 ], 200);
             }
         } else if ($request->foto != null || $request->video != null) {
-            Storage::delete('public/images/' . $targetData->foto);
-            Storage::delete('public/videos/' . $targetData->video);
-            $targetData->foto = null;
-            $targetData->video = null;
-        }
+            if ($request->foto != null && $targetData->foto == null) {
+                $originalName = $request->foto->getClientOriginalName();
+                $generatedNamePict = 'aktivitas' . '-' . time() . '.' . $request->foto->extension();
 
-        if ($request->foto != null && $targetData->foto == null) {
-            $path = $request->file('foto')->store('public/images');
-            $fileName = basename($path);
-            $targetData->foto = $fileName;
-        } else if ($request->foto != null && $targetData->foto != null) {
-            Storage::delete('public/images/' . $targetData->foto);
-            $path = $request->file('foto')->store('public/images');
-            $fileName = basename($path);
-            $targetData->foto = $fileName;
-        }
+                // menyimpan gambar
+                $request->foto->storeAs('public/aktivitas', $generatedNamePict);
+                $targetData->foto = $generatedNamePict;
+            } else if ($request->foto != null && $targetData->foto != null) {
+                unlink(public_path('storage/aktivitas/' . $targetData->foto));
 
-        if ($request->video != null && $targetData->video == null) {
-            $path = $request->file('video')->store('public/videos');
-            $vidFileName = basename($path);
-            $targetData->video = $vidFileName;
-        } else if ($request->video != null && $targetData->video != null) {
-            Storage::delete('public/videos/' . $targetData->video);
-            $path = $request->file('video')->store('public/videos');
-            $vidFileName = basename($path);
-            $targetData->video = $vidFileName;
-        }
+                $originalName = $request->foto->getClientOriginalName();
+                $generatedNamePict = 'aktivitas' . '-' . time() . '.' . $request->foto->extension();
 
+                // menyimpan gambar
+                $request->foto->storeAs('public/aktivitas', $generatedNamePict);
+                $targetData->foto = $generatedNamePict;
+            }
 
-        if ($targetData->save()) {
-            return response([
-                'message' => 'Data Updated Success',
-                'data' => $targetData
-            ], 200);
+            if ($request->video != null && $targetData->video == null) {
+
+                $originalName = $request->video->getClientOriginalName();
+                $generatedNameVid = 'aktivitas' . '-' . time() . '.' . $request->video->extension();
+
+                // menyimpan video
+                $request->video->storeAs('public/aktivitas', $generatedNameVid);
+                $targetData->video = $generatedNameVid;
+
+            } else if ($request->video != null && $targetData->video != null) {
+                unlink(public_path('storage/aktivitas/' . $targetData->video));
+
+                $originalName = $request->video->getClientOriginalName();
+                $generatedNameVid = 'aktivitas' . '-' . time() . '.' . $request->video->extension();
+
+                // menyimpan video
+                $request->video->storeAs('public/aktivitas', $generatedNameVid);
+                $targetData->video = $generatedNameVid;
+            }
+
+            if ($targetData->save()) {
+                return response([
+                    'message' => 'Data Updated Success',
+                    'data' => $targetData
+                ], 200);
+            }
         }
 
         return response([

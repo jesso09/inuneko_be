@@ -3,6 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Http\Controllers\Controller;
+use App\Models\Customer;
+use App\Models\PetShop;
+use App\Models\Vet;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Auth;
@@ -219,39 +222,22 @@ class AuthController extends Controller
 
         switch ($user->role) {
             case 'Customer':
-                $data = $user->customer;
-
-                // set id to customer_id
-                $data->customer_id = $data->id;
-
-                // unset id
-                unset($data->id);
-
+                // $data = $user->customer->with('customer');
+                // $data->customer_id = $data->id;
                 $message = 'Profile Customer';
+                $data = User::with('vet', 'petShop', 'customer')->find($user->id);
                 break;
 
             case 'Vet':
-                $data = $user->vet;
-
-                // set id to vet
-                $data->vet_id = $data->id;
-
-                // unset id
-                unset($data->id);
-
+                // $data = $user->vet;
+                // $data->vet_id = $data->id;
                 $message = ' Profile Vet';
+                $data = User::with('vet', 'petShop', 'customer')->find($user->id);
                 break;
 
             case 'Pet Shop':
-                $data = $user->petShop;
-
-                // set id to petShop
-                $data->petShop_id = $data->id;
-
-                // unset id
-                unset($data->id);
-
                 $message = ' Profile Pet Shop';
+                $data = User::with('vet', 'petShop', 'customer')->find($user->id);
                 break;
 
             default:
@@ -270,7 +256,7 @@ class AuthController extends Controller
 
     public function getUserById($id)
     {
-        $user = User::find($id);
+        $user = User::with('vet', 'petShop', 'customer')->find($id);
 
         if (!$user) {
             return response()->json([
@@ -281,6 +267,199 @@ class AuthController extends Controller
         return response()->json([
             'data' => $user,
         ], 200);
+    }
+
+    public function update(Request $request)
+    {
+        if (!Auth::user()) {
+            return response([
+                'message' => 'You cannot edit this model',
+            ], 400);
+        }
+
+        $role = Auth::user()->role;
+        $update = $request->all();
+
+        if ($role == "Customer") {
+            $targetCust = Customer::where('user_id', Auth::user()->id)->first();
+
+            $validator = Validator::make($update, [
+                'profile_pict' => 'mimes:jpeg,png,jpg,gif|max:50000',
+                'nama' => 'required',
+                'alamat' => 'required',
+            ], [
+                'profile_pict.mimes' => 'Format gambar yang diperbolehkan: jpeg, png, jpg, gif.',
+            ]);
+
+            if ($validator->fails()) {
+                return response(['message' => $validator->errors()], 400);
+            }
+            $targetCust->nama = $update['nama'];
+            $targetCust->alamat = $update['alamat'];
+
+            if ($request->profile_pict == null) {
+                if ($targetCust->save()) {
+                    return response([
+                        'message' => 'Data Updated Success',
+                        'data' => $targetCust
+                    ], 200);
+                }
+            } else if ($request->profile_pict != null) {
+                if ($targetCust->profile_pict == null) {
+                    $original_name = $request->profile_pict->getClientOriginalName();
+                    $generated_name = 'pp' . '-' . time() . '.' . $request->profile_pict->extension();
+
+                    // menyimpan gambar
+                    $request->profile_pict->storeAs('public/pp', $generated_name);
+                    $targetCust->profile_pict = $generated_name;
+
+
+                } else if ($targetCust->profile_pict != null) {
+
+                    unlink(public_path('storage/pp/' . $targetCust->profile_pict));
+
+                    $original_name = $request->profile_pict->getClientOriginalName();
+                    $generated_name = 'pp' . '-' . time() . '.' . $request->profile_pict->extension();
+                    // menyimpan gambar
+                    $request->profile_pict->storeAs('public/pp', $generated_name);
+                    $targetCust->profile_pict = $generated_name;
+                }
+
+                if ($targetCust->save()) {
+                    return response([
+                        'message' => 'Data Updated Success',
+                        'data' => $targetCust
+                    ], 200);
+                }
+            }
+            return response([
+                'message' => 'Failed to update data',
+                'data' => null
+            ], 400);
+        }
+
+        if ($role == "Vet") {
+            $targetVet = Vet::where('user_id', Auth::user()->id)->first();
+
+            $validator = Validator::make($update, [
+                'profile_pict' => 'mimes:jpeg,png,jpg,gif|max:50000',
+                'nama' => 'required',
+                'alamat' => 'required',
+                'pengalaman' => 'required',
+            ], [
+                'profile_pict.mimes' => 'Format gambar yang diperbolehkan: jpeg, png, jpg, gif.',
+            ]);
+
+            if ($validator->fails()) {
+                return response(['message' => $validator->errors()], 400);
+            }
+            $targetVet->nama = $update['nama'];
+            $targetVet->alamat = $update['alamat'];
+            $targetVet->pengalaman = $update['pengalaman'];
+            $targetVet->info_lain = $update['info_lain'];
+
+            if ($request->profile_pict == null) {
+                if ($targetVet->save()) {
+                    return response([
+                        'message' => 'Data Updated Success',
+                        'data' => $targetVet
+                    ], 200);
+                }
+            } else if ($request->profile_pict != null) {
+                if ($targetVet->profile_pict == null) {
+                    $original_name = $request->profile_pict->getClientOriginalName();
+                    $generated_name = 'pp' . '-' . time() . '.' . $request->profile_pict->extension();
+
+                    // menyimpan gambar
+                    $request->profile_pict->storeAs('public/pp', $generated_name);
+                    $targetVet->profile_pict = $generated_name;
+
+
+                } else if ($targetVet->profile_pict != null) {
+
+                    unlink(public_path('storage/pp/' . $targetVet->profile_pict));
+
+                    $original_name = $request->profile_pict->getClientOriginalName();
+                    $generated_name = 'pp' . '-' . time() . '.' . $request->profile_pict->extension();
+                    // menyimpan gambar
+                    $request->profile_pict->storeAs('public/pp', $generated_name);
+                    $targetVet->profile_pict = $generated_name;
+                }
+
+                if ($targetVet->save()) {
+                    return response([
+                        'message' => 'Data Updated Success',
+                        'data' => $targetVet
+                    ], 200);
+                }
+            }
+            return response([
+                'message' => 'Failed to update data',
+                'data' => null
+            ], 400);
+        }
+        
+        if ($role == "Pet Shop") {
+            $targetPetShop = PetShop::where('user_id', Auth::user()->id)->first();
+
+            $validator = Validator::make($update, [
+                'profile_pict' => 'mimes:jpeg,png,jpg,gif|max:50000',
+                'nama' => 'required',
+                'alamat' => 'required',
+                'kapasitas_penitipan' => 'required',
+                'harga_titip' => 'required',
+            ], [
+                'profile_pict.mimes' => 'Format gambar yang diperbolehkan: jpeg, png, jpg, gif.',
+            ]);
+
+            if ($validator->fails()) {
+                return response(['message' => $validator->errors()], 400);
+            }
+            $targetPetShop->nama = $update['nama'];
+            $targetPetShop->alamat = $update['alamat'];
+            $targetPetShop->kapasitas_penitipan = $update['kapasitas_penitipan'];
+            $targetPetShop->harga_titip = $update['harga_titip'];
+
+            if ($request->profile_pict == null) {
+                if ($targetPetShop->save()) {
+                    return response([
+                        'message' => 'Data Updated Success',
+                        'data' => $targetPetShop
+                    ], 200);
+                }
+            } else if ($request->profile_pict != null) {
+                if ($targetPetShop->profile_pict == null) {
+                    $original_name = $request->profile_pict->getClientOriginalName();
+                    $generated_name = 'pp' . '-' . time() . '.' . $request->profile_pict->extension();
+
+                    // menyimpan gambar
+                    $request->profile_pict->storeAs('public/pp', $generated_name);
+                    $targetPetShop->profile_pict = $generated_name;
+
+
+                } else if ($targetPetShop->profile_pict != null) {
+
+                    unlink(public_path('storage/pp/' . $targetPetShop->profile_pict));
+
+                    $original_name = $request->profile_pict->getClientOriginalName();
+                    $generated_name = 'pp' . '-' . time() . '.' . $request->profile_pict->extension();
+                    // menyimpan gambar
+                    $request->profile_pict->storeAs('public/pp', $generated_name);
+                    $targetPetShop->profile_pict = $generated_name;
+                }
+
+                if ($targetPetShop->save()) {
+                    return response([
+                        'message' => 'Data Updated Success',
+                        'data' => $targetPetShop
+                    ], 200);
+                }
+            }
+            return response([
+                'message' => 'Failed to update data',
+                'data' => null
+            ], 400);
+        }
     }
 
     public function getPP($fileName)

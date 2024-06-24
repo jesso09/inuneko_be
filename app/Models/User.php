@@ -42,6 +42,12 @@ class User extends Authenticatable
         'email_verified_at' => 'datetime',
     ];
 
+    public function getRoleAttribute()
+    {
+        // Return the role of the user
+        return $this->attributes['role'];
+    }
+
     public function customer()
     {
         return $this->hasOne(Customer::class, 'user_id', 'id');
@@ -55,5 +61,25 @@ class User extends Authenticatable
     public function petShop()
     {
         return $this->hasOne(PetShop::class, 'user_id', 'id');
+    }
+
+    public function messages(){
+        return $this->hasMany(ChatMessages::class, 'user_id');
+    }
+
+    public function sender(){
+        return $this->hasOne(Chat::class, 'sender_id');
+    }
+
+    public function receiver(){
+        return $this->hasOne(Chat::class, 'receiver_id');
+    }
+    
+    public function ratingSender(){
+        return $this->hasMany(Rating::class, 'sender_id');
+    }
+
+    public function ratingReceiver(){
+        return $this->hasMany(Rating::class, 'receiver_id');
     }
 }

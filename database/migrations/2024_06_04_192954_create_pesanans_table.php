@@ -16,11 +16,10 @@ return new class extends Migration
         Schema::create('pesanans', function (Blueprint $table) {
             $table->id();
             $table->foreignId('customer_id')->constrained('customers')->onUpdate('cascade')->onDelete('cascade');
-            $table->foreignId('produk_id')->constrained('produks')->onUpdate('cascade')->onDelete('cascade');
+            // $table->foreignId('shop_id')->constrained('pet_shops')->onUpdate('cascade')->onDelete('cascade');
             $table->string('no_pesanan');
-            $table->integer('jumlah_pesan');
             $table->dateTime('tanggal_pesan');
-            $table->string('status');
+            $table->string('alamat_pengiriman');
             $table->timestamps();
         });
     }

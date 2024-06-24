@@ -30,4 +30,9 @@ class PetShop extends Model
     {
         return $this->hasMany(Penitipan::class, 'pet_shop_id', 'id');
     }
+    
+    // public function order()
+    // {
+    //     return $this->hasMany(Pesanan::class, 'shop_id', 'id');
+    // }
 }

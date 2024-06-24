@@ -2,12 +2,14 @@
 
 use App\Http\Controllers\AktivitasPenitipanController;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\ChatController;
 use App\Http\Controllers\HouseCallController;
 use App\Http\Controllers\LayananController;
 use App\Http\Controllers\PenitipanController;
 use App\Http\Controllers\PesananController;
 use App\Http\Controllers\PetController;
 use App\Http\Controllers\ProdukController;
+use App\Http\Controllers\RatingController;
 use App\Http\Controllers\VetController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -36,7 +38,8 @@ Route::group(['prefix' => 'auth', 'middleware' => ['auth:sanctum']], function ()
     Route::post('logout', [AuthController::class, 'logout']);
     Route::get('user', [AuthController::class, 'getUser']);
     Route::get('user/{id}', [AuthController::class, 'getUserById']);
-    Route::get('pp', [AuthController::class, 'getPP']);
+    Route::get('pp/{filename}', [AuthController::class, 'getPP']);
+    Route::post('profile', [AuthController::class, 'update']);
 });
 
 Route::group(['prefix' => 'pet', 'middleware' => ['auth:sanctum']], function () {
@@ -49,6 +52,7 @@ Route::group(['prefix' => 'pet', 'middleware' => ['auth:sanctum']], function () 
 });
 
 Route::group(['prefix' => 'produk', 'middleware' => ['auth:sanctum']], function () {
+    Route::get('petShop', [ProdukController::class, 'petShopIndex']);
     Route::get('index', [ProdukController::class, 'index']);
     Route::get('show/{id}', [ProdukController::class, 'show']);
     Route::get('toko/{id}', [ProdukController::class, 'showToko']);
@@ -56,6 +60,8 @@ Route::group(['prefix' => 'produk', 'middleware' => ['auth:sanctum']], function 
     Route::post('edit/{id}', [ProdukController::class, 'update']);
     Route::get('produkPict/{fileName}', [ProdukController::class, 'getProductImage']);
     Route::delete('delete/{id}', [ProdukController::class, 'destroy']);
+    Route::post('hide/{id}', [ProdukController::class, 'hideProduk']);
+    Route::get('stock/{id}', [ProdukController::class, 'infoStock']);
 });
 
 Route::group(['prefix' => 'vet', 'middleware' => ['auth:sanctum']], function () {
@@ -77,14 +83,17 @@ Route::group(['prefix' => 'housecall', 'middleware' => ['auth:sanctum']], functi
     Route::post('add', [HouseCallController::class, 'store']);
     Route::post('edit/{id}', [HouseCallController::class, 'update']);
     Route::delete('delete/{id}', [HouseCallController::class, 'destroy']);
+    Route::post('status/{id}', [HouseCallController::class, 'changeStatus']);
 });
 
 Route::group(['prefix' => 'order', 'middleware' => ['auth:sanctum']], function () {
     Route::get('index', [PesananController::class, 'index']);
-    Route::get('show/{id}', [PesananController::class, 'show']);
+    Route::get('shop', [PesananController::class, 'indexShop']);
+    Route::get('show/{id}/{idShop}', [PesananController::class, 'show']);
     Route::post('add', [PesananController::class, 'store']);
     Route::post('edit/{id}', [PesananController::class, 'update']);
     Route::post('status/{id}', [PesananController::class, 'changeStatus']);
+    Route::post('payment', [PesananController::class, 'createTransaction']);
 });
 
 Route::group(['prefix' => 'penitipan', 'middleware' => ['auth:sanctum']], function () {
@@ -103,4 +112,15 @@ Route::group(['prefix' => 'activity', 'middleware' => ['auth:sanctum']], functio
     Route::post('add', [AktivitasPenitipanController::class, 'store']);
     Route::post('edit/{id}', [AktivitasPenitipanController::class, 'update']);
     Route::delete('delete/{id}', [AktivitasPenitipanController::class, 'destroy']);
+});
+
+Route::group(['prefix' => 'chat', 'middleware' => ['auth:sanctum']], function () {
+    Route::get('index', [ChatController::class, 'index']);
+    Route::get('message/{id}', [ChatController::class, 'indexRoomChat']);
+    Route::post('send', [ChatController::class, 'sentChat']);
+});
+
+Route::group(['prefix' => 'rate', 'middleware' => ['auth:sanctum']], function () {
+    Route::get('index', [RatingController::class, 'index']);
+    Route::post('rate/{id}', [RatingController::class, 'store']);
 });

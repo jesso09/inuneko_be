@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Models\Penitipan;
+use App\Models\Pet;
+use App\Models\PetShop;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
@@ -15,7 +17,7 @@ class PenitipanController extends Controller
         $role = Auth::user()->role;
         if ($role == "Customer") {
             $idCustomer = Auth::user()->customer->id;
-            $penitipanData = Penitipan::where('customer_id', $idCustomer)->latest()->get();
+            $penitipanData = Penitipan::where('customer_id', $idCustomer)->with('petShop', 'pet')->latest()->get();
 
             if (is_null($penitipanData)) {
                 return response([
@@ -30,7 +32,7 @@ class PenitipanController extends Controller
         }
         if ($role == "Pet Shop") {
             $idPetShop = Auth::user()->petShop->id;
-            $penitipanData = Penitipan::where('pet_shop_id', $idPetShop)->latest()->get();
+            $penitipanData = Penitipan::where('pet_shop_id', $idPetShop)->with('cust', 'pet')->latest()->get();
 
             if (is_null($penitipanData)) {
                 return response([
@@ -47,17 +49,35 @@ class PenitipanController extends Controller
 
     public function show($id)
     {
-        $penitipanData = Penitipan::find($id);
-        if (is_null($penitipanData)) {
+        $role = Auth::user()->role;
+        if ($role == "Customer") {
+            $penitipanData = Penitipan::with('petShop', 'pet')->find($id);
+
+            if (is_null($penitipanData)) {
+                return response([
+                    'message' => 'Data not found',
+                    'data' => $penitipanData
+                ], 404);
+            }
             return response([
-                'message' => 'Data not found',
+                'message' => 'Data Penitipan',
                 'data' => $penitipanData
-            ], 404);
+            ], 200);
         }
-        return response([
-            'message' => 'Data House Call',
-            'data' => $penitipanData
-        ], 200);
+        if ($role == "Pet Shop") {
+            $penitipanData = Penitipan::with('cust', 'pet')->find($id);
+
+            if (is_null($penitipanData)) {
+                return response([
+                    'message' => 'Data not found',
+                    'data' => $penitipanData
+                ], 404);
+            }
+            return response([
+                'message' => 'Data Penitipan',
+                'data' => $penitipanData
+            ], 200);
+        }
     }
 
     public function store(Request $request)
@@ -68,6 +88,7 @@ class PenitipanController extends Controller
         $validator = Validator::make($request->all(), [
             'pet_id' => 'required',
             'pet_shop_id' => 'required',
+            'penitipan_order_id' => 'required',
             'durasi' => 'required',
             'harga' => 'required',
             'mulai' => 'required',
@@ -82,16 +103,25 @@ class PenitipanController extends Controller
             'customer_id' => $idCustomer,
             'pet_id' => $request->pet_id,
             'pet_shop_id' => $request->pet_shop_id,
+            'penitipan_order_id' => $request->penitipan_order_id,
             'durasi' => $request->durasi,
             'harga' => $request->harga,
             'mulai' => $request->mulai,
             'selesai' => $request->selesai,
-            'status' => "Dititipkan",
+            'status' => "Menunggu",
         ]);
+
+        $petShop = PetShop::find($request->pet_shop_id);
+        $petShop->kapasitas_penitipan = $petShop->kapasitas_penitipan - 1;
+        $petShop->save();
+
+        $pet = Pet::find($request->pet_id);
+        $pet->status = "Menunggu Penitipan";
+        $pet->save();
 
         return response([
             'message' => 'Data added successfully',
-            'data' => $newData
+            'data' => $newData,
         ], 201);
     }
 
@@ -153,9 +183,24 @@ class PenitipanController extends Controller
         $dataFound->status = $request->status;
         $dataFound->save();
 
+        if ($request->status == "Pet Diterima") {
+            $dataFound->pet->status = "Dititipkan";
+            $dataFound->pet->save();
+        }
+        
+        if ($request->status == "Selesai") {
+            $dataFound->pet->status = "Dikembalikan";
+            $dataFound->pet->save();
+        }
+        
+        if ($request->status == "Dinilai") {
+            $dataFound->pet->status = null;
+            $dataFound->pet->save();
+        }
+
         return response()->json([
-            'message' => 'Data deleted successfully',
-            'data' => $dataFound,
+            'message' => 'Status Changed',
+            'data' => $dataFound->pet->status,
         ], 200);
     }
 }

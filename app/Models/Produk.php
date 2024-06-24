@@ -17,13 +17,14 @@ class Produk extends Model
         'harga',
         'desc',
         'stok',
+        'status',
     ];
     public function shop()
     {
         return $this->belongsTo(PetShop::class, 'shop_id');
     }
-    public function order()
+    public function detailOrder()
     {
-        return $this->hasMany(Pesanan::class, 'produk_id', 'id');
+        return $this->hasMany(DetailPesanan::class, 'produk_id', 'id');
     }
 }

@@ -13,8 +13,33 @@ use Illuminate\Support\Facades\File;
 
 class ProdukController extends Controller
 {
+    public function petShopIndex()
+    {
+        $petShopData = PetShop::latest()->get();
+        if (is_null($petShopData)) {
+            return response([
+                'message' => 'Content not found',
+                'data' => $petShopData
+            ], 404);
+        }
+        return response([
+            'message' => 'Data Vet',
+            'data' => $petShopData
+        ], 200);
+    }
+
     public function index()
     {
+        $role = Auth::user()->role;
+        if ($role == "Pet Shop") {
+            $idPetShop = Auth::user()->petShop->id;
+            $produkData = Produk::where('shop_id', $idPetShop)->with('shop')->latest()->get();
+            return response([
+                'message' => 'Data Produk',
+                'data' => $produkData
+            ], 200);
+        }
+
         $produkData = Produk::with('shop')->latest()->get();
         if (is_null($produkData)) {
             return response([
@@ -43,7 +68,6 @@ class ProdukController extends Controller
         }
 
         $id_shop = Auth::user()->petShop->id;
-        $productPict = null;
 
         $newData = $request->all();
         //Validasi Formulir
@@ -56,31 +80,40 @@ class ProdukController extends Controller
             'stok' => 'required',
             // 'status' => 'required',
         ], [
-            'photo.mimes' => 'Format gambar yang diperbolehkan: jpeg, png, jpg, gif.',
+            'produk_pict.mimes' => 'Format gambar yang diperbolehkan: jpeg, png, jpg, gif.',
         ]);
         if ($validator->fails()) {
             return response(['message' => $validator->errors()], 400);
         }
 
+
+
         // Simpan gambar dalam direktori 'storage/app/public/images'
         if ($request->produk_pict != null) {
-            $path = $request->file('produk_pict')->store('public/images');
-            $productPict = basename($path);
+
+            $original_name = $request->produk_pict->getClientOriginalName();
+            $generated_name = 'produk' . '-' . time() . '.' . $request->produk_pict->extension();
+
+            // menyimpan gambar
+            $request->produk_pict->storeAs('public/produk', $generated_name);
+        }else {
+            $generated_name = null;
         }
 
-        $newPetData = Produk::create([
+        $newData = Produk::create([
             'shop_id' => $id_shop,
-            'produk_pict' => $productPict,
+            'produk_pict' => $generated_name,
             'nama' => $request->nama,
             'kategori' => $request->kategori,
             'harga' => $request->harga,
             'desc' => $request->desc,
             'stok' => $request->stok,
+            'status' => "Dipublikasi",
         ]);
 
         return response([
             'message' => 'Data added successfully',
-            'data' => $newPetData
+            'data' => $newData
         ], 201);
     }
 
@@ -101,6 +134,48 @@ class ProdukController extends Controller
         ], 200);
     }
     
+    public function infoStock($id)
+    {
+        $dataFound = Produk::find($id);
+
+        if (is_null($dataFound)) {
+            return response([
+                'message' => 'Content not found',
+                'data' => null
+            ], 404);
+        }
+
+        return response([
+            'message' => 'Successfully',
+            'data' => $dataFound->stok,
+        ], 200);
+    }
+    
+    public function hideProduk($id)
+    {
+        $dataFound = Produk::find($id);
+
+        if (is_null($dataFound)) {
+            return response([
+                'message' => 'Content not found',
+                'data' => null
+            ], 404);
+        }
+
+        if ($dataFound->status == "Dipublikasi") {
+            $dataFound->status = "Disembunyikan";
+            $dataFound->save();
+        }else if ($dataFound->status == "Disembunyikan") {
+            $dataFound->status = "Dipublikasi";
+            $dataFound->save();
+        }
+
+        return response([
+            'message' => 'Successfully',
+            'data' => $dataFound
+        ], 200);
+    }
+
     public function showToko($id)
     {
         $dataFound = PetShop::with('product.shop')->find($id);
@@ -134,14 +209,14 @@ class ProdukController extends Controller
 
         // Hapus file gambar jika ada
         if ($productFound->produk_pict) {
-            Storage::delete('public/images/' . $productFound->produk_pict);
+            unlink(public_path('storage/produk/' . $productFound->produk_pict));
         }
 
         // Hapus konten dari database
         $productFound->delete();
 
         return response()->json([
-            'message' => 'Pet deleted successfully',
+            'message' => 'Produk deleted successfully',
             'data' => $productFound,
         ], 200);
     }
@@ -197,19 +272,23 @@ class ProdukController extends Controller
                 ], 200);
             }
         } else if ($request->produk_pict != null) {
-            Storage::delete('public/images/' . $targetProduk->produk_pict);
-            $targetProduk->produk_pict = null;
-        }
+            if ($targetProduk->produk_pict == null) {
+                $original_name = $request->produk_pict->getClientOriginalName();
+                $generated_name = 'produk' . '-' . time() . '.' . $request->produk_pict->extension();
 
-        if ($request->produk_pict != null && $targetProduk->produk_pict == null) {
-            $path = $request->file('produk_pict')->store('public/images');
-            $petPict = basename($path);
-            $targetProduk->produk_pict = $petPict;
-        } else if ($request->produk_pict != null && $targetProduk->produk_pict != null) {
-            Storage::delete('public/images/' . $targetProduk->produk_pict);
-            $path = $request->file('produk_pict')->store('public/images');
-            $petPict = basename($path);
-            $targetProduk->produk_pict = $petPict;
+                // menyimpan gambar
+                $request->produk_pict->storeAs('public/produk', $generated_name);
+                $targetProduk->produk_pict = $generated_name;
+
+            } else if ($targetProduk->produk_pict != null) {
+                unlink(public_path('storage/produk/' . $targetProduk->produk_pict));
+
+                $original_name = $request->produk_pict->getClientOriginalName();
+                $generated_name = 'produk' . '-' . time() . '.' . $request->produk_pict->extension();
+                // menyimpan gambar
+                $request->produk_pict->storeAs('public/produk', $generated_name);
+                $targetProduk->produk_pict = $generated_name;
+            }
         }
 
         if ($targetProduk->save()) {

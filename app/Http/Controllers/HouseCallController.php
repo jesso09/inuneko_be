@@ -15,7 +15,7 @@ class HouseCallController extends Controller
         $role = Auth::user()->role;
         if ($role == "Customer") {
             $idCustomer = Auth::user()->customer->id;
-            $houseCallData = HouseCall::where('customer_id', $idCustomer)->latest()->get();
+            $houseCallData = HouseCall::where('customer_id', $idCustomer)->with('vet', 'pet', 'layanan')->latest()->get();
 
             if (is_null($houseCallData)) {
                 return response([
@@ -30,7 +30,7 @@ class HouseCallController extends Controller
         }
         if ($role == "Vet") {
             $idVet = Auth::user()->vet->id;
-            $houseCallData = HouseCall::where('vet_id', $idVet)->latest()->get();
+            $houseCallData = HouseCall::where('vet_id', $idVet)->with('cust', 'pet', 'layanan')->latest()->get();
 
             if (is_null($houseCallData)) {
                 return response([
@@ -47,17 +47,34 @@ class HouseCallController extends Controller
 
     public function show($id)
     {
-        $houseCallData = HouseCall::find($id);
-        if (is_null($houseCallData)) {
+        $role = Auth::user()->role;
+
+        if ($role == "Customer") {
+            $houseCallData = HouseCall::with('vet', 'pet', 'layanan')->find($id);
+            if (is_null($houseCallData)) {
+                return response([
+                    'message' => 'Data not found',
+                    'data' => $houseCallData
+                ], 404);
+            }
             return response([
-                'message' => 'Data not found',
+                'message' => 'Data House Call',
                 'data' => $houseCallData
-            ], 404);
+            ], 200);
         }
-        return response([
-            'message' => 'Data House Call',
-            'data' => $houseCallData
-        ], 200);
+        if ($role == "Vet") {
+            $houseCallData = HouseCall::with('cust', 'pet', 'layanan')->find($id);
+            if (is_null($houseCallData)) {
+                return response([
+                    'message' => 'Data not found',
+                    'data' => $houseCallData
+                ], 404);
+            }
+            return response([
+                'message' => 'Data House Call',
+                'data' => $houseCallData
+            ], 200);
+        }
     }
 
     public function store(Request $request)
@@ -67,7 +84,9 @@ class HouseCallController extends Controller
         // Validasi Formulir
         $validator = Validator::make($request->all(), [
             'vet_id' => 'required',
+            'pet_id' => 'required',
             'service_id' => 'required',
+            'housecall_order_id' => 'required',
             'mulai' => 'required',
             'selesai' => 'required',
         ]);
@@ -79,7 +98,9 @@ class HouseCallController extends Controller
         $newData = HouseCall::create([
             'customer_id' => $idCustomer,
             'vet_id' => $request->vet_id,
+            'pet_id' => $request->pet_id,
             'service_id' => $request->service_id,
+            'housecall_order_id' => $request->housecall_order_id,
             'status' => "Ditunda",
             'mulai' => $request->mulai,
             'selesai' => $request->selesai,
@@ -106,6 +127,7 @@ class HouseCallController extends Controller
         $update = $request->all();
         $validator = Validator::make($update, [
             'vet_id' => 'required',
+            'pet_id' => 'required',
             'mulai' => 'required',
             'selesai' => 'required',
         ]);
@@ -115,6 +137,7 @@ class HouseCallController extends Controller
         }
 
         $dataHouseCall->customer_id = $idCustomer;
+        $dataHouseCall->pet_id = $update['pet_id'];
         $dataHouseCall->vet_id = $update['vet_id'];
         $dataHouseCall->service_id = $update['service_id'];
         // $dataHouseCall->status = $update['status'];
@@ -153,6 +176,23 @@ class HouseCallController extends Controller
         return response()->json([
             'message' => 'Data deleted successfully',
             'data' => $dataFound,
+        ], 200);
+    }
+
+    public function changeStatus(Request $request, $id)
+    {
+        $dataFound = HouseCall::find($id);
+
+        if (!$dataFound) {
+            return response()->json(['message' => 'Data not found'], 404);
+        }
+
+        $dataFound->status = $request->status;
+        $dataFound->save();
+
+        return response()->json([
+            'message' => 'Status Changed',
+            'data' => $dataFound->status,
         ], 200);
     }
 }

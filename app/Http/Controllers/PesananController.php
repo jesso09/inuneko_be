@@ -3,17 +3,20 @@
 namespace App\Http\Controllers;
 
 use App\Http\Controllers\Controller;
+use App\Models\DetailPesanan;
 use App\Models\Pesanan;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
+use Midtrans\Config;
+use Midtrans\Snap;
 
 class PesananController extends Controller
 {
     public function index()
     {
         $idCustomer = Auth::user()->customer->id;
-        $orderData = Pesanan::where('customer_id', $idCustomer)->latest()->get();
+        $orderData = Pesanan::where('customer_id', $idCustomer)->with('cust', 'detailOrder.product.shop')->latest()->get();
 
         if (is_null($orderData)) {
             return response([
@@ -27,18 +30,56 @@ class PesananController extends Controller
         ], 200);
     }
 
-    public function show($id)
+    public function indexShop()
     {
-        $orderData = Pesanan::find($id);
-        if (is_null($orderData)) {
+        $idShop = Auth::user()->petShop->id;
+
+        $orderData = Pesanan::whereHas('detailOrder.product.shop', function ($query) use ($idShop) {
+            $query->where('id', $idShop);
+        })
+            ->with([
+                'detailOrder' => function ($query) use ($idShop) {
+                    $query->whereHas('product.shop', function ($query) use ($idShop) {
+                        $query->where('id', $idShop);
+                    });
+                },
+                'detailOrder.product.shop',
+                'cust'
+            ])
+            ->latest()
+            ->get();
+
+        if ($orderData->isEmpty()) {
             return response([
                 'message' => 'Data not found',
                 'data' => $orderData
             ], 404);
         }
+
         return response([
             'message' => 'Data Order',
             'data' => $orderData
+        ], 200);
+
+    }
+
+    public function show($id, $idShop)
+    {
+        $dataFound = DetailPesanan::where('order_id', $id)
+            ->whereHas('product', function ($query) use ($idShop) {
+                $query->where('shop_id', $idShop);
+            })
+            ->with('product.shop')
+            ->latest()
+            ->get();
+
+        if (!$dataFound) {
+            return response()->json(['message' => 'Data not found'], 404);
+        }
+
+        return response()->json([
+            'message' => 'Status changed successfully',
+            'data' => $dataFound,
         ], 200);
     }
 
@@ -48,10 +89,16 @@ class PesananController extends Controller
 
         // Validasi Formulir
         $validator = Validator::make($request->all(), [
-            'produk_id' => 'required',
+            // 'shop_id' => 'required',
             'no_pesanan' => 'required',
-            'jumlah_pesan' => 'required',
             'tanggal_pesan' => 'required',
+            'alamat_pengiriman' => 'required',
+
+            'detail_orders' => 'required|array',
+            'detail_orders.*.produk_id' => 'required',
+            'detail_orders.*.jumlah_pesan' => 'required',
+            'detail_orders.*.total_harga' => 'required',
+            'detail_orders.*.status' => 'required',
         ]);
         if ($validator->fails()) {
             return response(['message' => 'Invalid input data', 'errors' => $validator->errors()], 400);
@@ -59,12 +106,20 @@ class PesananController extends Controller
 
         $newData = Pesanan::create([
             'customer_id' => $idCustomer,
-            'produk_id' => $request->produk_id,
+            // 'shop_id' => $request->shop_id,
             'no_pesanan' => $request->no_pesanan,
-            'jumlah_pesan' => $request->jumlah_pesan,
             'tanggal_pesan' => $request->tanggal_pesan,
-            'status' => "Diproses",
+            'alamat_pengiriman' => $request->alamat_pengiriman,
         ]);
+
+        foreach ($request->detail_orders as $detail) {
+            $newData->detailOrder()->create([
+                'produk_id' => $detail['produk_id'],
+                'jumlah_pesan' => $detail['jumlah_pesan'],
+                'total_harga' => $detail['total_harga'],
+                'status' => $detail['status'],
+            ]);
+        }
 
         return response([
             'message' => 'Data added successfully',
@@ -117,18 +172,63 @@ class PesananController extends Controller
 
     public function changeStatus(Request $request, $id)
     {
-        $dataFound = Pesanan::find($id);
+        $shopId = $request->shop_id;
+
+        $dataFound = DetailPesanan::where('order_id', $id)
+            ->whereHas('product', function ($query) use ($shopId) {
+                $query->where('shop_id', $shopId);
+            })
+            ->latest()
+            ->get();
+
+
 
         if (!$dataFound) {
             return response()->json(['message' => 'Data not found'], 404);
         }
 
-        $dataFound->status = $request->status;
-        $dataFound->save();
+        foreach ($dataFound as $detail) {
+            $detail->status = $request->status;
+            $detail->save();
+        }
 
         return response()->json([
-            'message' => 'Data deleted successfully',
+            'message' => 'Status changed successfully',
             'data' => $dataFound,
         ], 200);
+    }
+
+    public function __construct()
+    {
+        // Set konfigurasi Midtrans
+        Config::$serverKey = config('midtrans.server_key');
+        // Config::$isProduction = config('midtrans.is_production');
+    }
+
+    public function createTransaction(Request $request)
+    {
+        // $orderId = uniqid();
+        $params = [
+            'transaction_details' => [
+                'order_id' => $request->order_id,
+                'gross_amount' => $request->amount,
+            ],
+            'customer_details' => [
+                'first_name' => $request->first_name,
+                // 'last_name' => $request->last_name,
+                'email' => $request->email,
+                'address' => $request->address,
+            ],
+        ];
+
+        try {
+            $snapToken = Snap::getSnapToken($params);
+            return response()->json([
+                'snap_token' => $snapToken,
+                // 'order_id' => $orderId,
+            ]);
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
     }
 }

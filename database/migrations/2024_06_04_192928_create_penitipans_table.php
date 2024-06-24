@@ -18,6 +18,7 @@ return new class extends Migration
             $table->foreignId('customer_id')->constrained('customers')->onUpdate('cascade')->onDelete('cascade');
             $table->foreignId('pet_id')->constrained('pets')->onUpdate('cascade')->onDelete('cascade');
             $table->foreignId('pet_shop_id')->constrained('pet_shops')->onUpdate('cascade')->onDelete('cascade');
+            $table->string('penitipan_order_id');
             $table->string('durasi');
             $table->integer('harga');
             $table->dateTime('mulai');

@@ -24,6 +24,10 @@ class Pet extends Model
     }
     public function penitipan()
     {
-        return $this->hasOne(Pet::class, 'pet_id', 'id');
+        return $this->hasMany(Pet::class, 'pet_id', 'id');
+    }
+    public function houseCall()
+    {
+        return $this->hasMany(HouseCall::class, 'pet_id', 'id');
     }
 }

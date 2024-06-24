@@ -10,8 +10,10 @@ class HouseCall extends Model
     use HasFactory;
     protected $fillable = [
         'customer_id',
+        'pet_id',
         'vet_id',
         'service_id',
+        'housecall_order_id',
         'status',
         'mulai',
         'selesai',
@@ -23,6 +25,10 @@ class HouseCall extends Model
     public function cust()
     {
         return $this->belongsTo(Customer::class, 'customer_id');
+    }
+    public function pet()
+    {
+        return $this->belongsTo(Pet::class, 'pet_id');
     }
     public function layanan()
     {

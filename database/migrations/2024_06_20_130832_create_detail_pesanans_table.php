@@ -13,15 +13,12 @@ return new class extends Migration
      */
     public function up()
     {
-        Schema::create('produks', function (Blueprint $table) {
+        Schema::create('detail_pesanans', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('shop_id')->constrained('pet_shops')->onUpdate('cascade')->onDelete('cascade');
-            $table->string('produk_pict')->nullable();
-            $table->string('nama');
-            $table->string('kategori');
-            $table->integer('harga');
-            $table->text('desc');
-            $table->integer('stok');
+            $table->foreignId('order_id')->constrained('pesanans')->onUpdate('cascade')->onDelete('cascade');
+            $table->foreignId('produk_id')->constrained('produks')->onUpdate('cascade')->onDelete('cascade');
+            $table->integer('jumlah_pesan');
+            $table->bigInteger('total_harga');
             $table->string('status');
             $table->timestamps();
         });
@@ -34,6 +31,6 @@ return new class extends Migration
      */
     public function down()
     {
-        Schema::dropIfExists('produks');
+        Schema::dropIfExists('detail_pesanans');
     }
 };
