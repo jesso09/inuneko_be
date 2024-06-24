@@ -23,7 +23,7 @@ class AktivitasPenitipanController extends Controller
         }
 
         return response([
-            'message' => 'Successfully',
+            'message' => 'Successfullys',
             'data' => $activityData
         ], 200);
     }
