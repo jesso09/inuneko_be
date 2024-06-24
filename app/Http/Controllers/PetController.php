@@ -127,7 +127,7 @@ class PetController extends Controller
 
         // Hapus file gambar jika ada
         if ($petFound->pet_pict) {
-            unlink(public_path('storage/pet/' . $petFound->pet_pict));
+            unlink(public_path('storage/public/pet/' . $petFound->pet_pict));
         }
 
         // Hapus konten dari database
@@ -208,7 +208,7 @@ class PetController extends Controller
 
             } else if ($targetPet->pet_pict != null) {
 
-                unlink(public_path('storage/pet/' . $targetPet->pet_pict));
+                unlink(public_path('storage/public/pet/' . $targetPet->pet_pict));
 
                 $original_name = $request->pet_pict->getClientOriginalName();
                 $generated_name = 'pet' . '-' . time() . '.' . $request->pet_pict->extension();
