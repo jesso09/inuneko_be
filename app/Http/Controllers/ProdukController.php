@@ -209,7 +209,7 @@ class ProdukController extends Controller
 
         // Hapus file gambar jika ada
         if ($productFound->produk_pict) {
-            unlink(public_path('storage/produk/' . $productFound->produk_pict));
+            unlink(public_path('storage/public/produk/' . $productFound->produk_pict));
         }
 
         // Hapus konten dari database
@@ -281,7 +281,7 @@ class ProdukController extends Controller
                 $targetProduk->produk_pict = $generated_name;
 
             } else if ($targetProduk->produk_pict != null) {
-                unlink(public_path('storage/produk/' . $targetProduk->produk_pict));
+                unlink(public_path('storage/public/produk/' . $targetProduk->produk_pict));
 
                 $original_name = $request->produk_pict->getClientOriginalName();
                 $generated_name = 'produk' . '-' . time() . '.' . $request->produk_pict->extension();

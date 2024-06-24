@@ -316,7 +316,7 @@ class AuthController extends Controller
 
                 } else if ($targetCust->profile_pict != null) {
 
-                    unlink(public_path('storage/pp/' . $targetCust->profile_pict));
+                    unlink(public_path('storage/public/pp/' . $targetCust->profile_pict));
 
                     $original_name = $request->profile_pict->getClientOriginalName();
                     $generated_name = 'pp' . '-' . time() . '.' . $request->profile_pict->extension();
@@ -377,7 +377,7 @@ class AuthController extends Controller
 
                 } else if ($targetVet->profile_pict != null) {
 
-                    unlink(public_path('storage/pp/' . $targetVet->profile_pict));
+                    unlink(public_path('storage/public/pp/' . $targetVet->profile_pict));
 
                     $original_name = $request->profile_pict->getClientOriginalName();
                     $generated_name = 'pp' . '-' . time() . '.' . $request->profile_pict->extension();
@@ -439,7 +439,7 @@ class AuthController extends Controller
 
                 } else if ($targetPetShop->profile_pict != null) {
 
-                    unlink(public_path('storage/pp/' . $targetPetShop->profile_pict));
+                    unlink(public_path('storage/public/pp/' . $targetPetShop->profile_pict));
 
                     $original_name = $request->profile_pict->getClientOriginalName();
                     $generated_name = 'pp' . '-' . time() . '.' . $request->profile_pict->extension();

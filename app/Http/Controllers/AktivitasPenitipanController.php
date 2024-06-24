@@ -217,7 +217,7 @@ class AktivitasPenitipanController extends Controller
                 $request->foto->storeAs('public/aktivitas', $generatedNamePict);
                 $targetData->foto = $generatedNamePict;
             } else if ($request->foto != null && $targetData->foto != null) {
-                unlink(public_path('storage/aktivitas/' . $targetData->foto));
+                unlink(public_path('storage/public/aktivitas/' . $targetData->foto));
 
                 $originalName = $request->foto->getClientOriginalName();
                 $generatedNamePict = 'aktivitas' . '-' . time() . '.' . $request->foto->extension();
@@ -237,7 +237,7 @@ class AktivitasPenitipanController extends Controller
                 $targetData->video = $generatedNameVid;
 
             } else if ($request->video != null && $targetData->video != null) {
-                unlink(public_path('storage/aktivitas/' . $targetData->video));
+                unlink(public_path('storage/public/aktivitas/' . $targetData->video));
 
                 $originalName = $request->video->getClientOriginalName();
                 $generatedNameVid = 'aktivitas' . '-' . time() . '.' . $request->video->extension();
