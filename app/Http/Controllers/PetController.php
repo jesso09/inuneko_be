@@ -287,7 +287,7 @@ class PetController extends Controller
             return response(['message' => $validator->errors()], 400);
         }
 
-        if ($request->jenis_pet != "Kucing" || $request->jenis_pet != "Anjing") {
+        if ($request->jenis_pet != "Kucing" && $request->jenis_pet != "Anjing") {
             return response([
                 'message' => 'Invalid pet type',
             ], 400);
