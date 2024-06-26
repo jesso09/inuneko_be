@@ -265,6 +265,22 @@ class PetController extends Controller
             'data' => $tips
         ], 200);
     }
+
+    public function findTips($id)
+    {
+        $tips = TipsPet::find($id);
+        if (is_null($tips)) {
+            return response([
+                'message' => 'Data not found',
+                'data' => $tips
+            ], 404);
+        }
+        return response([
+            'message' => 'Data Tips',
+            'data' => $tips
+        ], 200);
+    }
+
     /**
      * store
      *
