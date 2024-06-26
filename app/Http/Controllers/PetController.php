@@ -247,6 +247,12 @@ class PetController extends Controller
     //~ Tips Pet
     public function getTips($jenis)
     {
+        if ($jenis != "Kucing" && $jenis != "Anjing") {
+            return response([
+                'message' => 'Invalid pet type',
+                'data' => null
+            ], 400);
+        }
         $tips = TipsPet::where('jenis_pet', $jenis)->latest()->get();
         if (is_null($tips)) {
             return response([
@@ -255,7 +261,7 @@ class PetController extends Controller
             ], 404);
         }
         return response([
-            'message' => 'Data Pet',
+            'message' => 'Data Tips',
             'data' => $tips
         ], 200);
     }
