@@ -73,7 +73,7 @@ class PetController extends Controller
 
             // menyimpan gambar
             $request->pet_pict->storeAs('public/pet', $generated_name);
-        }else {
+        } else {
             $generated_name = null;
         }
 
@@ -271,45 +271,51 @@ class PetController extends Controller
      * @param Request $request
      */
 
-     public function addTips(Request $request)
-     {
-         $newData = $request->all();
-         //Validasi Formulir
-         $validator = Validator::make($newData, [
-             'tips_pict' => 'mimes:jpeg,png,jpg,gif|max:50000',
-             'judul' => 'required',
-             'jenis_pet' => 'required',
-             'tips_text' => 'required',
-         ], [
-             'tips_pict.mimes' => 'Format gambar yang diperbolehkan: jpeg, png, jpg, gif.',
-         ]);
-         if ($validator->fails()) {
-             return response(['message' => $validator->errors()], 400);
-         }
- 
-         // Simpan gambar dalam direktori 'storage/app/public/images'
-         if ($request->tips_pict != null) {
- 
-             $original_name = $request->tips_pict->getClientOriginalName();
-             $generated_name = 'tips' . '-' . time() . '.' . $request->tips_pict->extension();
- 
-             // menyimpan gambar
-             $request->tips_pict->storeAs('public/tips', $generated_name);
-         }else {
-             $generated_name = null;
-         }
- 
-         $newTips = TipsPet::create([
-             'tips_pict' => $generated_name,
-             'judul' => $request->judul,
-             'jenis_pet' => $request->jenis_pet,
-             'ras_pet' => $request->ras_pet,
-             'tips_text' => $request->tips_text,
-         ]);
+    public function addTips(Request $request)
+    {
+        $newData = $request->all();
+        //Validasi Formulir
+        $validator = Validator::make($newData, [
+            'tips_pict' => 'mimes:jpeg,png,jpg,gif|max:50000',
+            'judul' => 'required',
+            'jenis_pet' => 'required',
+            'tips_text' => 'required',
+        ], [
+            'tips_pict.mimes' => 'Format gambar yang diperbolehkan: jpeg, png, jpg, gif.',
+        ]);
+        if ($validator->fails()) {
+            return response(['message' => $validator->errors()], 400);
+        }
 
-         return response([
-             'message' => 'Data added successfully',
-             'data' => $newTips
-         ], 201);
-     } 
+        if ($request->jenis_pet != "Kucing" || $request->jenis_pet != "Anjing") {
+            return response([
+                'message' => 'Invalid pet type',
+            ], 400);
+        }
+
+        // Simpan gambar dalam direktori 'storage/app/public/images'
+        if ($request->tips_pict != null) {
+
+            $original_name = $request->tips_pict->getClientOriginalName();
+            $generated_name = 'tips' . '-' . time() . '.' . $request->tips_pict->extension();
+
+            // menyimpan gambar
+            $request->tips_pict->storeAs('public/tips', $generated_name);
+        } else {
+            $generated_name = null;
+        }
+
+        $newTips = TipsPet::create([
+            'tips_pict' => $generated_name,
+            'judul' => $request->judul,
+            'jenis_pet' => $request->jenis_pet,
+            'ras_pet' => $request->ras_pet,
+            'tips_text' => $request->tips_text,
+        ]);
+
+        return response([
+            'message' => 'Data added successfully',
+            'data' => $newTips
+        ], 201);
+    }
 }
