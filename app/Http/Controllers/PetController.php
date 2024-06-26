@@ -272,6 +272,7 @@ class PetController extends Controller
          $validator = Validator::make($newData, [
              'tips_pict' => 'mimes:jpeg,png,jpg,gif|max:50000',
              'judul' => 'required',
+             'jenis_pet' => 'required',
              'tips_text' => 'required',
          ], [
              'tips_pict.mimes' => 'Format gambar yang diperbolehkan: jpeg, png, jpg, gif.',
@@ -295,9 +296,11 @@ class PetController extends Controller
          $newTips = TipsPet::create([
              'tips_pict' => $generated_name,
              'judul' => $request->judul,
+             'jenis_pet' => $request->jenis_pet,
+             'ras_pet' => $request->ras_pet,
              'tips_text' => $request->tips_text,
          ]);
- 
+
          return response([
              'message' => 'Data added successfully',
              'data' => $newTips
