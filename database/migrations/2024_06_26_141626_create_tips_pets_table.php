@@ -16,8 +16,10 @@ return new class extends Migration
         Schema::create('tips_pets', function (Blueprint $table) {
             $table->id();
             $table->string('judul');
+            $table->string('jenis_pet');
+            $table->string('ras_pet')->nullable();
             $table->string('tips_pict')->nullable();
-            $table->string('tips_text');
+            $table->longText('tips_text');
             $table->timestamps();
         });
     }

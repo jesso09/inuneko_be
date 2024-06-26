@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Events\ChatEvent;
 use App\Http\Controllers\Controller;
 use App\Models\Pet;
+use App\Models\TipsPet;
 use Illuminate\Broadcasting\Channel;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
@@ -241,4 +242,65 @@ class PetController extends Controller
 
         return response()->file($path);
     }
+
+
+    //~ Tips Pet
+    public function getTips($jenis)
+    {
+        $tips = TipsPet::where('jenis_pet', $jenis)->latest()->get();
+        if (is_null($tips)) {
+            return response([
+                'message' => 'Data not found',
+                'data' => $tips
+            ], 404);
+        }
+        return response([
+            'message' => 'Data Pet',
+            'data' => $tips
+        ], 200);
+    }
+    /**
+     * store
+     *
+     * @param Request $request
+     */
+
+     public function addTips(Request $request)
+     {
+         $newData = $request->all();
+         //Validasi Formulir
+         $validator = Validator::make($newData, [
+             'tips_pict' => 'mimes:jpeg,png,jpg,gif|max:50000',
+             'judul' => 'required',
+             'tips_text' => 'required',
+         ], [
+             'tips_pict.mimes' => 'Format gambar yang diperbolehkan: jpeg, png, jpg, gif.',
+         ]);
+         if ($validator->fails()) {
+             return response(['message' => $validator->errors()], 400);
+         }
+ 
+         // Simpan gambar dalam direktori 'storage/app/public/images'
+         if ($request->tips_pict != null) {
+ 
+             $original_name = $request->tips_pict->getClientOriginalName();
+             $generated_name = 'tips' . '-' . time() . '.' . $request->tips_pict->extension();
+ 
+             // menyimpan gambar
+             $request->tips_pict->storeAs('public/tips', $generated_name);
+         }else {
+             $generated_name = null;
+         }
+ 
+         $newTips = TipsPet::create([
+             'tips_pict' => $generated_name,
+             'judul' => $request->judul,
+             'tips_text' => $request->tips_text,
+         ]);
+ 
+         return response([
+             'message' => 'Data added successfully',
+             'data' => $newTips
+         ], 201);
+     } 
 }

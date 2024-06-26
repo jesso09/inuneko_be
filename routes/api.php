@@ -49,6 +49,9 @@ Route::group(['prefix' => 'pet', 'middleware' => ['auth:sanctum']], function () 
     Route::get('show/{id}', [PetController::class, 'getPet']);
     Route::delete('delete/{id}', [PetController::class, 'destroy']);
     Route::get('petPict/{fileName}', [PetController::class, 'getPetImage']);
+
+    Route::get('tips/{jenis}', [PetController::class, 'getTips']);
+    Route::post('addtips', [PetController::class, 'addTips']);
 });
 
 Route::group(['prefix' => 'produk', 'middleware' => ['auth:sanctum']], function () {

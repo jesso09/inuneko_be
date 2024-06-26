@@ -10,6 +10,8 @@ class TipsPet extends Model
     use HasFactory;
     protected $fillable = [
         'judul',
+        'jenis_pet',
+        'ras_pet',
         'tips_pict',
         'tips_text',
     ];
