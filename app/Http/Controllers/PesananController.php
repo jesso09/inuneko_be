@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Controllers\Controller;
 use App\Models\DetailPesanan;
 use App\Models\Pesanan;
+use App\Models\Produk;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
@@ -120,8 +121,11 @@ class PesananController extends Controller
                 'status' => $detail['status'],
             ]);
             if ($detail['status'] == "Dibayar") {
-                $detail->product->stok -= $detail['jumlah_pesan'];
-                $detail->product->save();
+                $product = Produk::find($detail['produk_id']);
+                if ($product) {
+                    $product->stok -= $detail['jumlah_pesan'];
+                    $product->save();
+                }
             }
         }
 
