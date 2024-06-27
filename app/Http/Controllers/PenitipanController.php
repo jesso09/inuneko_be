@@ -185,11 +185,15 @@ class PenitipanController extends Controller
 
         if ($request->status == "Pet Diterima") {
             $dataFound->pet->status = "Dititipkan";
+            $dataFound->petShop->kapasitas_penitipan -= 1;
+            $dataFound->petShop->save();
             $dataFound->pet->save();
         }
         
         if ($request->status == "Selesai") {
             $dataFound->pet->status = "Dikembalikan";
+            $dataFound->petShop->kapasitas_penitipan += 1;
+            $dataFound->petShop->save();
             $dataFound->pet->save();
         }
         

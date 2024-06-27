@@ -181,8 +181,6 @@ class PesananController extends Controller
             ->latest()
             ->get();
 
-
-
         if (!$dataFound) {
             return response()->json(['message' => 'Data not found'], 404);
         }
@@ -190,6 +188,13 @@ class PesananController extends Controller
         foreach ($dataFound as $detail) {
             $detail->status = $request->status;
             $detail->save();
+        }
+
+        if ($request->status == "Dibayar") {
+            foreach ($dataFound as $detail) {
+                $detail->product->stok -= $detail->jumlah_pesan;
+                $detail->product->save();
+            }
         }
 
         return response()->json([
