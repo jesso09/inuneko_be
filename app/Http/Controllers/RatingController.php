@@ -63,9 +63,6 @@ class RatingController extends Controller
             foreach ($rateForTarget as $value) {
                 $totalRateValue += $value->value;
             }
-            foreach ($rateForTarget as $value) {
-                $totalRateValue += $value->value;
-            }
             $newRate = $totalRateValue / $rateForTarget->count();
             $receiver->vet->rating = $newRate;
             $receiver->vet->save();
