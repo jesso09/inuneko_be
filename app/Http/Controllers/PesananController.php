@@ -119,6 +119,10 @@ class PesananController extends Controller
                 'total_harga' => $detail['total_harga'],
                 'status' => $detail['status'],
             ]);
+            if ($detail['status'] == "Dibayar") {
+                $detail->product->stok -= $detail['jumlah_pesan'];
+                $detail->product->save();
+            }
         }
 
         return response([
