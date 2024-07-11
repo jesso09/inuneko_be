@@ -81,6 +81,8 @@ class AuthController extends Controller
             'role' => 'required',
             'email' => 'required|email|unique:users,email',
             'password' => 'required|min:8',
+        ], [
+            'email.unique' => 'Email sudah terdaftar'
         ]);
 
         if ($validator->fails()) {
@@ -398,7 +400,7 @@ class AuthController extends Controller
                 'data' => null
             ], 400);
         }
-        
+
         if ($role == "Pet Shop") {
             $targetPetShop = PetShop::where('user_id', Auth::user()->id)->first();
 
